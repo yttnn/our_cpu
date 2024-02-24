@@ -1,3 +1,5 @@
+`include "def.sv"
+
 module core (
   input logic clk
   // input logic reset,
@@ -29,9 +31,15 @@ module core (
   wire [31:0] rs1_data = (rs1_addr != '0) ? registers[rs1_addr] : '0;
   wire [31:0] rs2_data = (rs2_addr != '0) ? registers[rs2_addr] : '0;
 
+  instructions decode_inst;
+
+  always @(posedge clk) begin
+    decode_inst.add <= ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000));
+  end
+
   // EX
   always @(posedge clk) begin
-    if ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000)) begin
+    if (decode_inst.add) begin
       registers[rd] = rs1_data + rs2_data;
     end
   end
