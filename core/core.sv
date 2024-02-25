@@ -12,6 +12,8 @@ module core (
   
   // IF
 
+  instruction_memory _instruction_memory(.addr(pc), .inst(inst));
+
   // ID
   wire [6:0] funct7   = inst[31:25];
   wire [4:0] rs2_addr = inst[24:20];
@@ -33,19 +35,26 @@ module core (
 
   instructions decode_inst;
 
-  always @(posedge clk) begin
-    decode_inst.add <= ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000));
-  end
+  // always @(posedge clk) begin
+  //   decode_inst.add <= ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000));
+  // end
 
   // EX
   always @(posedge clk) begin
+    $display("%b", inst);
+    decode_inst.add = ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000));
+    $display("opcode %b",((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000)) );
     if (decode_inst.add) begin
       registers[rd] = rs1_data + rs2_data;
+      $display("add");
+      $display("%d", pc);
     end
+    pc = pc + 1;
   end
 
-  always @(posedge clk ) begin
-    pc = pc + 4;
-  end
+  // always @(posedge clk ) begin
+  //   pc = pc + 1;
+  //   $display("PC");
+  // end
 
 endmodule
