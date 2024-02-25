@@ -43,9 +43,13 @@ module core (
   always @(posedge clk) begin
     $display("%b", inst);
     decode_inst.add = ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000));
+    decode_inst.sub = ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0100000));
     if (decode_inst.add) begin
       registers[rd] = rs1_data + rs2_data;
       $display("add");
+    end
+    else if (decode_inst.sub) begin
+      registers[rd] = rs1_data - rs2_data;
     end
     pc = pc + 1;
   end
