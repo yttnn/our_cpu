@@ -11,6 +11,7 @@ module instruction_memory (
   initial begin
     i_memory[0] <= 32'b00000000001000001000000000110011; // add
     i_memory[1] <= 32'b01000000001000001000000000110011; // sub x[0] x[1] x[2]
+    i_memory[2] <= 32'b00000000001000001000000000010011; // addi x[0] x[1] 2
   end
   
 endmodule

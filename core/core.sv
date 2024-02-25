@@ -44,12 +44,16 @@ module core (
     $display("%b", inst);
     decode_inst.add = ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000));
     decode_inst.sub = ((opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0100000));
+    decode_inst.addi = ((opcode == 7'b0010011) && (funct3 == 3'b000));
     if (decode_inst.add) begin
       registers[rd] = rs1_data + rs2_data;
       $display("add");
     end
     else if (decode_inst.sub) begin
       registers[rd] = rs1_data - rs2_data;
+    end
+    else if (decode_inst.addi) begin
+      registers[rd] = rs1_data + imm_i_sext;
     end
     pc = pc + 1;
   end
