@@ -5,5 +5,5 @@ module top();
     // initial #99 forever #100
       // $display("%3d %h %h", $time, core.r_pc, m.w_ir);
       // $display("%h", _core.pc);
-  initial #1000 $finish;
+  initial #2000 $finish;
 endmodule
