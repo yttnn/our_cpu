@@ -7,14 +7,19 @@ module core (
   
   logic [31:0] pc = 0;
   logic [31:0] registers[31:0];
+  `ifdef BENCH
+  integer i;
+  initial begin
+    for (i=0; i<32; i++) begin
+      registers[i] = 0;
+    end
+  end
+  `endif
   logic [31:0] data;
   logic [31:0] inst;
   logic [31:0] mem [0:255];
 
   initial begin
-    // add x0, x0, x0
-    //                   rs2   rs1  add  rd   ALUREG
-    inst = 32'b0000000_00000_00000_000_00000_0110011;
     // add x1, x0, x0
     //                    rs2   rs1  add  rd  ALUREG
     mem[0] = 32'b0000000_00000_00000_000_00001_0110011;
@@ -30,17 +35,28 @@ module core (
     // addi x1, x1, 1
     //             imm         rs1  add  rd   ALUIMM
     mem[4] = 32'b000000000001_00001_000_00001_0010011;
-    // lw x2,0(x1)
-    //             imm         rs1   w   rd   LOAD
-    mem[5] = 32'b000000000000_00001_010_00010_0000011;
-    // sw x2,0(x1)
-    //             imm   rs2   rs1   w   imm  STORE
-    mem[6] = 32'b000000_00010_00001_010_00000_0100011;
-    
+    // add x2, x1, x0
+    //                    rs2   rs1  add  rd   ALUREG
+    mem[5] = 32'b0000000_00000_00001_000_00010_0110011;
+    // add x3, x1, x2
+    //                    rs2   rs1  add  rd   ALUREG
+    mem[6] = 32'b0000000_00010_00001_000_00011_0110011;
+    // srli x3, x3, 3
+    //                   shamt   rs1  sr  rd   ALUIMM
+    mem[7] = 32'b0000000_00011_00011_101_00011_0010011;
+    // slli x3, x3, 31
+    //                   shamt   rs1  sl  rd   ALUIMM
+    mem[8] = 32'b0000000_11111_00011_001_00011_0010011;
+    // srai x3, x3, 5
+    //                   shamt   rs1  sr  rd   ALUIMM
+    mem[9] = 32'b0100000_00101_00011_101_00011_0010011;
+    // srli x1, x3, 26
+    //                   shamt   rs1  sr  rd   ALUIMM
+    mem[10] = 32'b0000000_11010_00011_101_00001_0010011;
+
     // ebreak
-    //                                        SYSTEM
-    mem[7] = 32'b000000000001_00000_000_00000_1110011;
-    
+    //                                          SYSTEM
+    mem[11] = 32'b000000000001_00000_000_00000_1110011;
   end
   
   wire [6:0] funct7   = inst[31:25];
@@ -77,8 +93,27 @@ module core (
   logic [31:0] rs2_data;
   logic [31:0] wb_data;
   logic        wb_enable;
-  assign wb_data = 0;
-  assign wb_enable = 0;
+
+  wire [31:0] alu_in_1 = rs1_data;
+  wire [31:0] alu_in_2 = is_alu_reg ? rs2_data : imm_i_sign_ext;
+  wire [4:0] shift_amount = is_alu_reg ? rs2_data[4:0] : imm_i_sign_ext[4:0];
+  logic [31:0] alu_out;
+
+  always @(*) begin // TODO: change to always_comb
+    case (funct3)
+      3'b000 : alu_out = (funct7[5] & opcode[5]) ? (alu_in_1 - alu_in_2) : (alu_in_1 + alu_in_2);
+      3'b001 : alu_out = alu_in_1 << shift_amount;
+      3'b010 : alu_out = ($signed(alu_in_1) < $signed(alu_in_2));
+      3'b011 : alu_out = (alu_in_1 < alu_in_2);
+      3'b100 : alu_out = (alu_in_1 ^ alu_in_2);
+      3'b101 : alu_out = funct7[5] ? ($signed(alu_in_1) >>> shift_amount) : (alu_in_1 >> shift_amount);
+      3'b110 : alu_out = (alu_in_1 | alu_in_2);
+      3'b111 : alu_out = (alu_in_1 & alu_in_2);
+      default: ;
+    endcase
+  end
+  assign wb_data = alu_out;
+  assign wb_enable = (state == EXECUTE && (is_alu_reg || is_alu_imm));
 
   always @(posedge clk ) begin
     if (!reset_n) begin
@@ -88,6 +123,10 @@ module core (
     else begin // reset_n == true
       if (wb_enable && rd != 0) begin
         registers[rd] <= wb_data;
+        `ifdef BENCH
+        $display("x[%0d] <= %b", rd, alu_out);
+        $display("%b", imm_i_sign_ext);
+        `endif
       end
 
       case (state)
@@ -97,7 +136,7 @@ module core (
         end
         DECODE : begin
           rs1_data <= registers[rs1_addr];
-          rs2_data <= registers[rs2_data];
+          rs2_data <= registers[rs2_addr];
           state <= EXECUTE;
         end
         EXECUTE : begin
@@ -118,7 +157,8 @@ module core (
   // debug output
   `ifdef BENCH
   always @(posedge clk) begin
-    $display("PC=%0d", pc);
+    if (state == DECODE) begin
+    // $display("PC=%0d", pc);
 
     case (1'b1)
       is_alu_reg : $display("alu_reg rd=%d, rs1=%d, rs2=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
@@ -135,6 +175,7 @@ module core (
     endcase
 
     $display("--------------");
+    end
   end
   `endif
 
