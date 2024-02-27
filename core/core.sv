@@ -17,46 +17,23 @@ module core (
   `endif
   logic [31:0] data;
   logic [31:0] inst;
-  logic [31:0] mem [0:255];
+  logic [31:0] MEM [0:255];
 
+  `include "riscv_assembly.sv"
   initial begin
-    // add x1, x0, x0
-    //                    rs2   rs1  add  rd  ALUREG
-    mem[0] = 32'b0000000_00000_00000_000_00001_0110011;
-    // addi x1, x1, 1
-    //             imm         rs1  add  rd   ALUIMM
-    mem[1] = 32'b000000000001_00001_000_00001_0010011;
-    // addi x1, x1, 1
-    //             imm         rs1  add  rd   ALUIMM
-    mem[2] = 32'b000000000001_00001_000_00001_0010011;
-    // addi x1, x1, 1
-    //             imm         rs1  add  rd   ALUIMM
-    mem[3] = 32'b000000000001_00001_000_00001_0010011;
-    // addi x1, x1, 1
-    //             imm         rs1  add  rd   ALUIMM
-    mem[4] = 32'b000000000001_00001_000_00001_0010011;
-    // add x2, x1, x0
-    //                    rs2   rs1  add  rd   ALUREG
-    mem[5] = 32'b0000000_00000_00001_000_00010_0110011;
-    // add x3, x1, x2
-    //                    rs2   rs1  add  rd   ALUREG
-    mem[6] = 32'b0000000_00010_00001_000_00011_0110011;
-    // srli x3, x3, 3
-    //                   shamt   rs1  sr  rd   ALUIMM
-    mem[7] = 32'b0000000_00011_00011_101_00011_0010011;
-    // slli x3, x3, 31
-    //                   shamt   rs1  sl  rd   ALUIMM
-    mem[8] = 32'b0000000_11111_00011_001_00011_0010011;
-    // srai x3, x3, 5
-    //                   shamt   rs1  sr  rd   ALUIMM
-    mem[9] = 32'b0100000_00101_00011_101_00011_0010011;
-    // srli x1, x3, 26
-    //                   shamt   rs1  sr  rd   ALUIMM
-    mem[10] = 32'b0000000_11010_00011_101_00001_0010011;
-
-    // ebreak
-    //                                          SYSTEM
-    mem[11] = 32'b000000000001_00000_000_00000_1110011;
+    ADD(x0,x0,x0);
+    ADD(x1,x0,x0);
+    ADDI(x1,x1,1);
+    ADDI(x1,x1,1);
+    ADDI(x1,x1,1);
+    ADDI(x1,x1,1);
+    ADD(x2,x1,x0);
+    ADD(x3,x1,x2);
+    SRLI(x3,x3,3);
+    SLLI(x3,x3,31);
+    SRAI(x3,x3,5);
+    SRLI(x1,x3,26);
+    EBREAK();
   end
   
   wire [6:0] funct7   = inst[31:25];
@@ -125,13 +102,12 @@ module core (
         registers[rd] <= wb_data;
         `ifdef BENCH
         $display("x[%0d] <= %b", rd, alu_out);
-        $display("%b", imm_i_sign_ext);
         `endif
       end
 
       case (state)
         FETCH : begin
-          inst <= mem[pc];
+          inst <= MEM[pc];
           state <= DECODE;
         end
         DECODE : begin
