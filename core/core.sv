@@ -72,14 +72,44 @@ module core (
   wire [31:0] imm_u_sign_ext = {imm_u};
   wire [31:0] imm_j_sign_ext = {{11{imm_j[20]}}, imm_j};
 
+  state_t state = FETCH;
+  logic [31:0] rs1_data;
+  logic [31:0] rs2_data;
+  logic [31:0] wb_data;
+  logic        wb_enable;
+  assign wb_data = 0;
+  assign wb_enable = 0;
+
   always @(posedge clk ) begin
     if (!reset_n) begin
       pc <= 0;
+      state <= FETCH;
     end
-    else if (!is_system) begin
-      inst <= mem[pc];
-      pc <= pc + 1;
-    end
+    else begin // reset_n == true
+      if (wb_enable && rd != 0) begin
+        registers[rd] <= wb_data;
+      end
+
+      case (state)
+        FETCH : begin
+          inst <= mem[pc];
+          state <= DECODE;
+        end
+        DECODE : begin
+          rs1_data <= registers[rs1_addr];
+          rs2_data <= registers[rs2_data];
+          state <= EXECUTE;
+        end
+        EXECUTE : begin
+          if (!is_system) begin
+            pc <= pc + 1;
+          end
+          state <= FETCH;
+        end
+        default: $display("warning: switch state. core.sv");
+      endcase
+
+    end // reset_n == true
     `ifdef BENCH
     if (is_system) $finish();
     `endif

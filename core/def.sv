@@ -10,4 +10,10 @@ typedef struct packed {
   logic addi;
 } instinfo_t;
 
+typedef enum logic[1:0] {
+  FETCH,
+  DECODE,
+  EXECUTE
+} state_t;
+
 `endif
