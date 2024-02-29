@@ -20,20 +20,14 @@ module core (
   logic [31:0] MEM [0:255];
 
   `include "riscv_assembly.sv"
+  integer L0_ = 4;
   initial begin
-    ADD(x0,x0,x0);
     ADD(x1,x0,x0);
+    Label(L0_);
     ADDI(x1,x1,1);
-    ADDI(x1,x1,1);
-    ADDI(x1,x1,1);
-    ADDI(x1,x1,1);
-    ADD(x2,x1,x0);
-    ADD(x3,x1,x2);
-    SRLI(x3,x3,3);
-    SLLI(x3,x3,31);
-    SRAI(x3,x3,5);
-    SRLI(x1,x3,26);
+    JAL(x0,LabelRef(L0_));
     EBREAK();
+    endASM();
   end
   
   wire [6:0] funct7   = inst[31:25];
@@ -89,8 +83,19 @@ module core (
       default: ;
     endcase
   end
-  assign wb_data = alu_out;
-  assign wb_enable = (state == EXECUTE && (is_alu_reg || is_alu_imm));
+  assign wb_data = (is_jal || is_jalr) ? (pc + 4) : alu_out;
+  assign wb_enable = (
+    state == EXECUTE &&
+    (
+      is_alu_reg ||
+      is_alu_imm ||
+      is_jal     ||
+      is_jalr
+    )
+  );
+  wire [31:0] next_pc = is_jal  ? pc + imm_j_sign_ext :
+                        is_jalr ? rs1_data + imm_i_sign_ext :
+                        pc + 4;
 
   always @(posedge clk ) begin
     if (!reset_n) begin
@@ -101,7 +106,7 @@ module core (
       if (wb_enable && rd != 0) begin
         registers[rd] <= wb_data;
         `ifdef BENCH
-        $display("x[%0d] <= %b", rd, alu_out);
+        $display("x[%0d] <= %b", rd, wb_data);
         `endif
       end
 
@@ -117,7 +122,7 @@ module core (
         end
         EXECUTE : begin
           if (!is_system) begin
-            pc <= pc + 4;
+            pc <= next_pc;
           end
           state <= FETCH;
         end
