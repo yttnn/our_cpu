@@ -107,7 +107,7 @@ module core (
 
       case (state)
         FETCH : begin
-          inst <= MEM[pc];
+          inst <= MEM[pc[31:2]];
           state <= DECODE;
         end
         DECODE : begin
@@ -117,7 +117,7 @@ module core (
         end
         EXECUTE : begin
           if (!is_system) begin
-            pc <= pc + 1;
+            pc <= pc + 4;
           end
           state <= FETCH;
         end
