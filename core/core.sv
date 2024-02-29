@@ -20,12 +20,13 @@ module core (
   logic [31:0] MEM [0:255];
 
   `include "riscv_assembly.sv"
-  integer L0_ = 4;
+  integer L0_ = 8;
   initial begin
     ADD(x1,x0,x0);
+    ADDI(x2, x0, 32);
     Label(L0_);
     ADDI(x1,x1,1);
-    JAL(x0,LabelRef(L0_));
+    BNE(x1, x2,LabelRef(L0_));
     EBREAK();
     endASM();
   end
@@ -83,6 +84,19 @@ module core (
       default: ;
     endcase
   end
+
+  logic [31:0] take_branch;
+  always @(*) begin // TODO: change to always_comb
+    case (funct3)
+      3'b000 : take_branch = (rs1_data == rs2_data); // beq
+      3'b001 : take_branch = (rs1_data != rs2_data); // bne
+      3'b100 : take_branch = ($signed(rs1_data) < $signed(rs2_data)); // blt
+      3'b101 : take_branch = ($signed(rs1_data) >= $signed(rs2_data)); // bge
+      3'b110 : take_branch = (rs1_data < rs2_data); // bltu
+      3'b111 : take_branch = (rs1_data >= rs2_data); // bgeu
+      default: take_branch = 1'b0;
+    endcase
+  end
   assign wb_data = (is_jal || is_jalr) ? (pc + 4) : alu_out;
   assign wb_enable = (
     state == EXECUTE &&
@@ -93,8 +107,9 @@ module core (
       is_jalr
     )
   );
-  wire [31:0] next_pc = is_jal  ? pc + imm_j_sign_ext :
-                        is_jalr ? rs1_data + imm_i_sign_ext :
+  wire [31:0] next_pc = (is_branch && take_branch) ? pc + imm_b_sign_ext :
+                        is_jal                     ? pc + imm_j_sign_ext :
+                        is_jalr                    ? rs1_data + imm_i_sign_ext :
                         pc + 4;
 
   always @(posedge clk ) begin
@@ -144,7 +159,7 @@ module core (
     case (1'b1)
       is_alu_reg : $display("alu_reg rd=%d, rs1=%d, rs2=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
       is_alu_imm : $display("alu_imm rd=%d, rs1=%d, imm=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
-      is_branch  : $display("branch");
+      is_branch  : $display("branch rs1=%0d rs2=%0d", rs1_addr, rs2_addr);
       is_jal     : $display("jal");
       is_jalr    : $display("jalr");
       is_auipc   : $display("auipc");
