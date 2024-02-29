@@ -22,11 +22,8 @@ module core (
   `include "riscv_assembly.sv"
   integer L0_ = 8;
   initial begin
-    ADD(x1,x0,x0);
-    ADDI(x2, x0, 32);
-    Label(L0_);
-    ADDI(x1,x1,1);
-    BNE(x1, x2,LabelRef(L0_));
+    LUI(x1, 32'b11111111111111111111111111111111);
+    ORI(x1, x1, 32'b11111111111111111111111111111111);
     EBREAK();
     endASM();
   end
@@ -97,14 +94,19 @@ module core (
       default: take_branch = 1'b0;
     endcase
   end
-  assign wb_data = (is_jal || is_jalr) ? (pc + 4) : alu_out;
+  assign wb_data = (is_jal || is_jalr) ? (pc + 4) :
+                   (is_lui)            ? imm_u_sign_ext :
+                   (is_auipc)          ? (pc + imm_u_sign_ext) :
+                   alu_out;
   assign wb_enable = (
     state == EXECUTE &&
     (
       is_alu_reg ||
       is_alu_imm ||
       is_jal     ||
-      is_jalr
+      is_jalr    ||
+      is_lui     ||
+      is_auipc
     )
   );
   wire [31:0] next_pc = (is_branch && take_branch) ? pc + imm_b_sign_ext :
