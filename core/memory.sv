@@ -8,7 +8,7 @@ module memory (
 
   logic [31:0] MEM [0:255];
 
-  `include "riscv_assembly.sv"
+  `include "riscv_assembly.v"
   
   integer L0_ = 8;
   initial begin
