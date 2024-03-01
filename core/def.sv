@@ -12,6 +12,7 @@ typedef struct packed {
 
 typedef enum logic[1:0] {
   FETCH,
+  WAIT_INSTR,
   DECODE,
   EXECUTE
 } state_t;

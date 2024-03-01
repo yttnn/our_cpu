@@ -2,7 +2,12 @@
 
 module core (
   input logic clk,
-  input logic reset_n
+  input logic reset_n,
+  input logic [31:0] mem_rdata,
+
+  output logic [31:0] mem_addr,
+  output logic mem_r_enable,
+  output logic [31:0] x1 // for debug
 );
   
   logic [31:0] pc = 0;
@@ -17,16 +22,6 @@ module core (
   `endif
   logic [31:0] data;
   logic [31:0] inst;
-  logic [31:0] MEM [0:255];
-
-  `include "riscv_assembly.sv"
-  integer L0_ = 8;
-  initial begin
-    LUI(x1, 32'b11111111111111111111111111111111);
-    ORI(x1, x1, 32'b11111111111111111111111111111111);
-    EBREAK();
-    endASM();
-  end
   
   wire [6:0] funct7   = inst[31:25];
   wire [4:0] rs2_addr = inst[24:20];
@@ -114,6 +109,9 @@ module core (
                         is_jalr                    ? rs1_data + imm_i_sign_ext :
                         pc + 4;
 
+  assign mem_addr = pc;
+  assign mem_r_enable = (state == FETCH);
+
   always @(posedge clk ) begin
     if (!reset_n) begin
       pc <= 0;
@@ -129,7 +127,10 @@ module core (
 
       case (state)
         FETCH : begin
-          inst <= MEM[pc[31:2]];
+          state <= WAIT_INSTR;
+        end
+        WAIT_INSTR : begin
+          inst <= mem_rdata;
           state <= DECODE;
         end
         DECODE : begin

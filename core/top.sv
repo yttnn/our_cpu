@@ -1,9 +1,30 @@
-module top();
-  reg clk=0; initial #150 forever #1000 clk = ~clk;
-  logic reset_n = 1;
-  core _core (clk, reset_n);
-    // initial #99 forever #100
-      // $display("%3d %h %h", $time, core.r_pc, m.w_ir);
-      // $display("%h", _core.pc);
-  // initial #10000 $finish;
+module top(
+  input logic clk,
+  input logic reset_n
+  // input logic rxd,
+  
+  // output logic txd,
+  // output logic [4:0] leds
+);
+  logic [31:0] mem_addr;
+  logic [31:0] mem_rdata;
+  logic mem_r_enable;
+  logic [31:0] x1;
+
+  memory _memory(
+    .clk(clk),
+    .mem_addr(mem_addr),
+    .mem_rdata(mem_rdata),
+    .mem_r_enable(mem_r_enable)
+  );
+
+  core _core(
+    .clk(clk),
+    .reset_n(reset_n),
+    .mem_addr(mem_addr),
+    .mem_rdata(mem_rdata),
+    .mem_r_enable(mem_r_enable),
+    .x1(x1)
+  );
+  
 endmodule
