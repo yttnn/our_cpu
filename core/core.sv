@@ -58,6 +58,16 @@ module core (
   logic [31:0] wb_data;
   logic        wb_enable;
 
+  wire [31:0] load_store_addr = rs1_data + imm_i_sign_ext;
+  wire [15:0] load_halfword = load_store_addr[1] ? mem_rdata[31:16] : mem_rdata[15:0];
+  wire [7:0] load_byte = load_store_addr[0] ? load_halfword[15:8] : load_halfword[7:0];
+  wire load_sign = !funct3[2] & (is_mem_byte_access ? load_byte[7] : load_halfword[15]); // 符号
+  wire is_mem_byte_access = (funct3[1:0] == 2'b00);
+  wire is_mem_halfword_access = (funct3[1:0] == 2'b01);
+  wire [31:0] load_data = is_mem_byte_access ? {{24{load_sign}}, load_byte} :
+                           is_mem_halfword_access ? {{16{load_sign}}, load_halfword} :
+                           mem_rdata;
+
   wire [31:0] alu_in_1 = rs1_data;
   wire [31:0] alu_in_2 = is_alu_reg ? rs2_data : imm_i_sign_ext;
   wire [4:0] shift_amount = is_alu_reg ? rs2_data[4:0] : imm_i_sign_ext[4:0];
@@ -109,8 +119,8 @@ module core (
                         is_jalr                    ? rs1_data + imm_i_sign_ext :
                         pc + 4;
 
-  assign mem_addr = pc;
-  assign mem_r_enable = (state == FETCH);
+  assign mem_addr = (state == WAIT_INSTR || state == FETCH) ? pc : load_store_addr;
+  assign mem_r_enable = (state == FETCH || state == LOAD);
 
   always @(posedge clk ) begin
     if (!reset_n) begin
@@ -142,15 +152,21 @@ module core (
           if (!is_system) begin
             pc <= next_pc;
           end
+          state <= is_load ? LOAD : FETCH;
+          `ifdef BENCH
+          if (is_system) $finish();
+          `endif
+        end
+        LOAD : begin
+          state <= WAIT_DATA;
+        end
+        WAIT_DATA : begin
           state <= FETCH;
         end
         default: $display("warning: switch state. core.sv");
       endcase
 
     end // reset_n == true
-    `ifdef BENCH
-    if (is_system) $finish();
-    `endif
   end
 
   // debug output

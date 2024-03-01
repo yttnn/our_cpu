@@ -10,11 +10,13 @@ typedef struct packed {
   logic addi;
 } instinfo_t;
 
-typedef enum logic[1:0] {
+typedef enum logic[2:0] {
   FETCH,
   WAIT_INSTR,
   DECODE,
-  EXECUTE
+  EXECUTE,
+  LOAD,
+  WAIT_DATA
 } state_t;
 
 `endif
