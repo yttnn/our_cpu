@@ -2,6 +2,8 @@ module memory (
   input logic clk,
   input logic [31:0] mem_addr,
   input logic mem_r_enable,
+  input logic mem_w_enable,
+  input logic [31:0] mem_wdata,
 
   output logic [31:0] mem_rdata
 );
@@ -10,29 +12,29 @@ module memory (
 
   `include "riscv_assembly.v"
   
-  integer L0_ = 8;
-  integer wait_ = 32;
-  integer L1_ = 40;
-  integer slow_bit = 13;
+  integer L0_ = 16;
+  integer L1_ = 28;
+  integer L2_ = 52;
   initial begin
-      LI(s0,0);   
-      LI(s1,16);
-   Label(L0_); 
-      LB(a0,s0,400); // LEDs are plugged on a0 (=x10)
-      CALL(LabelRef(wait_));
-      ADDI(s0,s0,1); 
-      BNE(s0,s1, LabelRef(L0_));
-      EBREAK();
-      
-   Label(wait_);
-      LI(t0,1);
-      SLLI(t0,t0,slow_bit);
-   Label(L1_);
-      ADDI(t0,t0,-1);
-      BNEZ(t0,LabelRef(L1_));
-      RET();
-
-      endASM();
+    LI(t3, 10);
+    LI(t4, 1);
+    BLT(t4, t3, LabelRef(L0_));
+    MV(t4, t3);
+    Label(L0_);
+    LI(t4, 1);
+    LI(t5, 1);
+    LI(t0, 2);
+    Label(L1_);
+    BGE(t0, t3, LabelRef(L2_));
+    MV(t6, t4);
+    ADD(t4, t4, t5);
+    MV(t5, t6);
+    ADDI(t0, t0, 1);
+    J(LabelRef(L1_));
+    Label(L2_);
+    MV(a0, t4);
+    EBREAK();
+    endASM();
 
       // Note: index 100 (word address)
       //     corresponds to 
@@ -46,6 +48,9 @@ module memory (
   always @(posedge clk) begin
     if (mem_r_enable) begin
       mem_rdata <= MEM[mem_addr[31:2]];
+    end
+    else if (mem_w_enable) begin
+      MEM[mem_addr] <= mem_wdata;
     end
   end
 

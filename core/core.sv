@@ -7,6 +7,8 @@ module core (
 
   output logic [31:0] mem_addr,
   output logic mem_r_enable,
+  output logic mem_w_enable,
+  output logic [31:0] mem_wdata,
   output logic [31:0] x1 // for debug
 );
   
@@ -58,7 +60,7 @@ module core (
   logic [31:0] wb_data;
   logic        wb_enable;
 
-  wire [31:0] load_store_addr = rs1_data + imm_i_sign_ext;
+  wire [31:0] load_store_addr = rs1_data + (is_store ? imm_s_sign_ext : imm_i_sign_ext);
   wire [15:0] load_halfword = load_store_addr[1] ? mem_rdata[31:16] : mem_rdata[15:0];
   wire [7:0] load_byte = load_store_addr[0] ? load_halfword[15:8] : load_halfword[7:0];
   wire load_sign = !funct3[2] & (is_mem_byte_access ? load_byte[7] : load_halfword[15]); // 符号
@@ -67,6 +69,7 @@ module core (
   wire [31:0] load_data = is_mem_byte_access ? {{24{load_sign}}, load_byte} :
                            is_mem_halfword_access ? {{16{load_sign}}, load_halfword} :
                            mem_rdata;
+  assign mem_wdata = rs2_data;
 
   wire [31:0] alu_in_1 = rs1_data;
   wire [31:0] alu_in_2 = is_alu_reg ? rs2_data : imm_i_sign_ext;
@@ -104,7 +107,8 @@ module core (
                    (is_auipc)          ? (pc + imm_u_sign_ext) :
                    alu_out;
   assign wb_enable = (
-    state == EXECUTE &&
+    // state == EXECUTE &&
+    state == WB &&
     (
       is_alu_reg ||
       is_alu_imm ||
@@ -120,7 +124,8 @@ module core (
                         pc + 4;
 
   assign mem_addr = (state == WAIT_INSTR || state == FETCH) ? pc : load_store_addr;
-  assign mem_r_enable = (state == FETCH || state == LOAD);
+  assign mem_r_enable = (state == FETCH || (state == MEM_ACCESS && is_load));
+  assign mem_w_enable = ((state == MEM_ACCESS) && is_store);
 
   always @(posedge clk ) begin
     if (!reset_n) begin
@@ -128,12 +133,12 @@ module core (
       state <= FETCH;
     end
     else begin // reset_n == true
-      if (wb_enable && rd != 0) begin
-        registers[rd] <= wb_data;
-        `ifdef BENCH
-        $display("x[%0d] <= %b", rd, wb_data);
-        `endif
-      end
+      // if (wb_enable && rd != 0) begin
+      //   registers[rd] <= wb_data;
+      //   `ifdef BENCH
+      //   $display("x[%0d] <= %b", rd, wb_data);
+      //   `endif
+      // end
 
       case (state)
         FETCH : begin
@@ -152,17 +157,33 @@ module core (
           if (!is_system) begin
             pc <= next_pc;
           end
-          state <= is_load ? LOAD : FETCH;
+          // state <= is_load ? LOAD : FETCH;
+          state <= MEM_ACCESS;
           `ifdef BENCH
-          if (is_system) $finish();
+          if (is_system) begin
+            $display("finished a0=%d", registers[10]);
+            $finish();
+          end
           `endif
         end
-        LOAD : begin
-          state <= WAIT_DATA;
+        // LOAD : begin
+        //   state <= WAIT_DATA;
+        // end
+        MEM_ACCESS : begin
+          state <= WB;
         end
-        WAIT_DATA : begin
+        WB : begin
+          if (wb_enable && rd != 0) begin
+            registers[rd] <= wb_data;
+            `ifdef BENCH
+            $display("x[%0d] <= %b", rd, wb_data);
+            `endif
+          end
           state <= FETCH;
         end
+        // WAIT_DATA : begin
+        //   state <= FETCH;
+        // end
         default: $display("warning: switch state. core.sv");
       endcase
 
@@ -189,7 +210,7 @@ module core (
       default    : $display("??????");
     endcase
 
-    $display("--------------");
+    // $display("--------------");
     end
   end
   `endif

@@ -15,8 +15,8 @@ typedef enum logic[2:0] {
   WAIT_INSTR,
   DECODE,
   EXECUTE,
-  LOAD,
-  WAIT_DATA
+  MEM_ACCESS,
+  WB
 } state_t;
 
 `endif

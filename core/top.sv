@@ -8,6 +8,8 @@ module top(
 );
   logic [31:0] mem_addr;
   logic [31:0] mem_rdata;
+  logic [31:0] mem_wdata;
+  logic mem_w_enable;
   logic mem_r_enable;
   logic [31:0] x1;
 
@@ -15,7 +17,9 @@ module top(
     .clk(clk),
     .mem_addr(mem_addr),
     .mem_rdata(mem_rdata),
-    .mem_r_enable(mem_r_enable)
+    .mem_r_enable(mem_r_enable),
+    .mem_w_enable(mem_w_enable),
+    .mem_wdata(mem_wdata)
   );
 
   core _core(
@@ -24,6 +28,8 @@ module top(
     .mem_addr(mem_addr),
     .mem_rdata(mem_rdata),
     .mem_r_enable(mem_r_enable),
+    .mem_w_enable(mem_w_enable),
+    .mem_wdata(mem_wdata),
     .x1(x1)
   );
   
