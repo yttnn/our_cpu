@@ -19,4 +19,7 @@ typedef enum logic[2:0] {
   WB
 } state_t;
 
+// parameter MCAUSE = 12'h342;
+// parameter MTVEC  = 12'h305;
+
 `endif

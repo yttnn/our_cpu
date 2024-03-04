@@ -142,6 +142,7 @@ module core (
       is_auipc
     )
   );
+  // TODO: def mtvec(32'h305)
   wire [31:0] next_pc = (is_branch && take_branch) ? pc + imm_b_sign_ext :
                         is_jal                     ? pc + imm_j_sign_ext :
                         is_jalr                    ? rs1_data + imm_i_sign_ext :
