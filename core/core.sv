@@ -32,7 +32,6 @@ module core (
   wire [2:0] funct3   = inst[14:12];
   wire [4:0] rd       = inst[11:7];
   wire [6:0] opcode   = inst[6:0];
-  wire [11:0] csr_addr = inst[31:20];
 
   wire is_alu_reg = (opcode == 7'b0110011); // rd <- rs1 OP rs2
   wire is_alu_imm = (opcode == 7'b0010011); // rd <- rs1 OP imm_i
@@ -45,6 +44,7 @@ module core (
   wire is_store   = (opcode == 7'b0100011); // mem[rs1+imm_s] <- rs2
   wire is_system  = (opcode == 7'b1110011); // system call
   wire is_csr     = (is_system && (funct3 != 3'b000 || funct3 != 3'b100));
+  wire is_ecall   = (is_system && inst[31:7] == {25'b0});
  
   wire [11:0] imm_i = inst[31:20];
   wire [11:0] imm_s = {inst[31:25], inst[11:7]};
@@ -108,6 +108,7 @@ module core (
     endcase
   end
   
+  wire [11:0] csr_addr = is_ecall ? 12'h342 : inst[31:20];
   wire [31:0] csr_rdata = csr_regs[csr_addr];
   logic [31:0] csr_wdata;
   always @(*) begin
@@ -118,6 +119,8 @@ module core (
       3'b110 : csr_wdata = csr_rdata | imm_z_usign_ext; // csrrsi
       3'b011 : csr_wdata = csr_rdata & ~rs1_data; // csrrc
       3'b111 : csr_wdata = csr_rdata & ~imm_z_usign_ext; // csrrci
+      // ------------ ecall -----------------------
+      3'b000 : csr_wdata = 32'h11; // ecall from machine mode
       default : csr_wdata = 1'b0;
     endcase
   end
@@ -142,6 +145,7 @@ module core (
   wire [31:0] next_pc = (is_branch && take_branch) ? pc + imm_b_sign_ext :
                         is_jal                     ? pc + imm_j_sign_ext :
                         is_jalr                    ? rs1_data + imm_i_sign_ext :
+                        is_ecall                   ? csr_regs[32'h305] : // jump to mtvec(trap_vector)
                         pc + 4;
 
   assign mem_addr = (state == WAIT_INSTR || state == FETCH) ? pc : load_store_addr;
