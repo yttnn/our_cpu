@@ -14,6 +14,7 @@ module core (
   
   logic [31:0] pc = 0;
   logic [31:0] registers[31:0];
+  logic [31:0] csr_regs[4095:0];
   `ifdef BENCH
   integer i;
   initial begin
@@ -31,6 +32,7 @@ module core (
   wire [2:0] funct3   = inst[14:12];
   wire [4:0] rd       = inst[11:7];
   wire [6:0] opcode   = inst[6:0];
+  wire [11:0] csr_addr = inst[31:20];
 
   wire is_alu_reg = (opcode == 7'b0110011); // rd <- rs1 OP rs2
   wire is_alu_imm = (opcode == 7'b0010011); // rd <- rs1 OP imm_i
@@ -42,17 +44,20 @@ module core (
   wire is_load    = (opcode == 7'b0000011); // rd <- mem[rs1+imm_i]
   wire is_store   = (opcode == 7'b0100011); // mem[rs1+imm_s] <- rs2
   wire is_system  = (opcode == 7'b1110011); // system call
+  wire is_csr     = (is_system && (funct3 != 3'b000 || funct3 != 3'b100));
  
   wire [11:0] imm_i = inst[31:20];
   wire [11:0] imm_s = {inst[31:25], inst[11:7]};
   wire [12:0] imm_b = {inst[31], inst[7], inst[30:25], inst[11:8], 1'b0};
   wire [31:0] imm_u = {inst[31:12], 12'b0};
   wire [20:0] imm_j = {inst[31], inst[19:12], inst[20], inst[30:21], 1'b0};
+  wire [ 4:0] imm_z = inst[19:15];
   wire [31:0] imm_i_sign_ext = {{20{imm_i[11]}}, imm_i};
   wire [31:0] imm_s_sign_ext = {{20{imm_s[11]}}, imm_s};
   wire [31:0] imm_b_sign_ext = {{19{imm_b[12]}}, imm_b};
   wire [31:0] imm_u_sign_ext = {imm_u};
   wire [31:0] imm_j_sign_ext = {{11{imm_j[20]}}, imm_j};
+  wire [31:0] imm_z_usign_ext = {27'b0, imm_z};
 
   state_t state = FETCH;
   logic [31:0] rs1_data;
@@ -102,9 +107,25 @@ module core (
       default: take_branch = 1'b0;
     endcase
   end
+  
+  wire [31:0] csr_rdata = csr_regs[csr_addr];
+  logic [31:0] csr_wdata;
+  always @(*) begin
+    case (funct3)
+      3'b001 : csr_wdata = rs1_data; // csrrw
+      3'b101 : csr_wdata = imm_z_usign_ext; // csrrwi
+      3'b010 : csr_wdata = csr_rdata | rs1_data; // csrrs
+      3'b110 : csr_wdata = csr_rdata | imm_z_usign_ext; // csrrsi
+      3'b011 : csr_wdata = csr_rdata & ~rs1_data; // csrrc
+      3'b111 : csr_wdata = csr_rdata & ~imm_z_usign_ext; // csrrci
+      default : csr_wdata = 1'b0;
+    endcase
+  end
+
   assign wb_data = (is_jal || is_jalr) ? (pc + 4) :
                    (is_lui)            ? imm_u_sign_ext :
                    (is_auipc)          ? (pc + imm_u_sign_ext) :
+                   (is_csr)            ? csr_rdata :
                    alu_out;
   assign wb_enable = (
     // state == EXECUTE &&
@@ -170,6 +191,9 @@ module core (
         //   state <= WAIT_DATA;
         // end
         MEM_ACCESS : begin
+          if (is_csr) begin
+            csr_regs[csr_addr] <= csr_wdata;
+          end
           state <= WB;
         end
         WB : begin
