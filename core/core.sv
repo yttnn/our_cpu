@@ -4,7 +4,9 @@ module core (
   input logic clk,
   input logic reset_n,
   input logic [31:0] mem_rdata,
+  input logic [31:0] rom_rdata,
 
+  output logic [31:0] rom_addr,
   output logic [31:0] mem_addr,
   output logic mem_r_enable,
   output logic mem_w_enable,
@@ -43,7 +45,7 @@ module core (
   wire is_load    = (opcode == 7'b0000011); // rd <- mem[rs1+imm_i]
   wire is_store   = (opcode == 7'b0100011); // mem[rs1+imm_s] <- rs2
   wire is_system  = (opcode == 7'b1110011); // system call
-  wire is_csr     = (is_system && (funct3 != 3'b000 || funct3 != 3'b100));
+  wire is_csr     = (is_system && (funct3 != 3'b000 && funct3 != 3'b100));
   wire is_ecall   = (is_system && inst[31:7] == {25'b0});
  
   wire [11:0] imm_i = inst[31:20];
@@ -139,6 +141,7 @@ module core (
       is_jal     ||
       is_jalr    ||
       is_lui     ||
+      is_csr ||
       is_auipc
     )
   );
@@ -149,7 +152,10 @@ module core (
                         is_ecall                   ? csr_regs[32'h305] : // jump to mtvec(trap_vector)
                         pc + 4;
 
-  assign mem_addr = (state == WAIT_INSTR || state == FETCH) ? pc : load_store_addr;
+  // FIX: ROM impl
+  // assign mem_addr = (state == WAIT_INSTR || state == FETCH) ? pc : load_store_addr;
+  assign mem_addr = load_store_addr;
+  assign rom_addr = pc;
   assign mem_r_enable = (state == FETCH || (state == MEM_ACCESS && is_load));
   assign mem_w_enable = ((state == MEM_ACCESS) && is_store);
 
@@ -168,10 +174,18 @@ module core (
 
       case (state)
         FETCH : begin
+          `ifdef BENCH
+          if (pc === 'x) begin
+            $display("error: unexpected value in pc");
+            $finish();
+          end
+          `endif
           state <= WAIT_INSTR;
         end
         WAIT_INSTR : begin
-          inst <= mem_rdata;
+          // FIX ROM impl
+          // inst <= mem_rdata;
+          inst <= rom_rdata;
           state <= DECODE;
         end
         DECODE : begin
@@ -180,14 +194,17 @@ module core (
           state <= EXECUTE;
         end
         EXECUTE : begin
-          if (!is_system) begin
-            pc <= next_pc;
-          end
+          // if (!is_system) begin
+            // pc <= next_pc;
+          // end
           // state <= is_load ? LOAD : FETCH;
           state <= MEM_ACCESS;
           `ifdef BENCH
-          if (is_system) begin
-            $display("finished a0=%d", registers[10]);
+          // FIX: riscv-tests finish flag
+          if (pc == 32'h4c) begin
+          // if (is_system) begin
+            // $display("finished a0=%d", registers[10]);
+            $display("gp = %h", registers[3]);
             $finish();
           end
           `endif
@@ -205,9 +222,10 @@ module core (
           if (wb_enable && rd != 0) begin
             registers[rd] <= wb_data;
             `ifdef BENCH
-            $display("x[%0d] <= %b", rd, wb_data);
+            // $display("x[%0d] <= %b", rd, wb_data);
             `endif
           end
+          pc <= next_pc;
           state <= FETCH;
         end
         // WAIT_DATA : begin
@@ -224,18 +242,20 @@ module core (
   always @(posedge clk) begin
     if (state == DECODE) begin
     // $display("PC=%0d", pc);
-
+    $display("pc=%h, gp=%d, t5=%d, t6=%d, mcause=%h", pc, registers[3], registers[30], registers[31], csr_regs[12'h342]);
     case (1'b1)
       is_alu_reg : $display("alu_reg rd=%d, rs1=%d, rs2=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
       is_alu_imm : $display("alu_imm rd=%d, rs1=%d, imm=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
       is_branch  : $display("branch rs1=%0d rs2=%0d", rs1_addr, rs2_addr);
       is_jal     : $display("jal");
       is_jalr    : $display("jalr");
-      is_auipc   : $display("auipc");
+      is_auipc   : $display("auipc %d", imm_u_sign_ext);
       is_lui     : $display("lui");
       is_load    : $display("load");
       is_store   : $display("store");
-      is_system  : $display("system");
+      // is_system  : $display("system pc =%h", pc);
+      is_csr     : $display("csr pc=%h", pc);
+      is_ecall   : $display("ecall pc=%h", pc);
       default    : $display("??????");
     endcase
 
