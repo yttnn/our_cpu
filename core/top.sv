@@ -6,6 +6,8 @@ module top(
   // output logic txd,
   // output logic [4:0] leds
 );
+  logic [31:0] rom_addr;
+  logic [31:0] rom_rdata;
   logic [31:0] mem_addr;
   logic [31:0] mem_rdata;
   logic [31:0] mem_wdata;
@@ -17,6 +19,8 @@ module top(
     .clk(clk),
     .mem_addr(mem_addr),
     .mem_rdata(mem_rdata),
+    .rom_addr(rom_addr),
+    .rom_rdata(rom_rdata),
     .mem_r_enable(mem_r_enable),
     .mem_w_enable(mem_w_enable),
     .mem_wdata(mem_wdata)
@@ -26,6 +30,8 @@ module top(
     .clk(clk),
     .reset_n(reset_n),
     .mem_addr(mem_addr),
+    .rom_addr(rom_addr),
+    .rom_rdata(rom_rdata),
     .mem_rdata(mem_rdata),
     .mem_r_enable(mem_r_enable),
     .mem_w_enable(mem_w_enable),
