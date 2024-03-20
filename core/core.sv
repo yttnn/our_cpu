@@ -23,6 +23,9 @@ module core (
     for (i=0; i<32; i++) begin
       registers[i] = 0;
     end
+    for (i=0; i<4096; i++) begin
+      csr_regs[i] = 0;
+    end
   end
   `endif
   logic [31:0] data;
@@ -122,7 +125,7 @@ module core (
       3'b011 : csr_wdata = csr_rdata & ~rs1_data; // csrrc
       3'b111 : csr_wdata = csr_rdata & ~imm_z_usign_ext; // csrrci
       // ------------ ecall -----------------------
-      3'b000 : csr_wdata = 32'h11; // ecall from machine mode
+      3'b000 : csr_wdata = 32'd11; // ecall from machine mode
       default : csr_wdata = 1'b0;
     endcase
   end
@@ -213,8 +216,9 @@ module core (
         //   state <= WAIT_DATA;
         // end
         MEM_ACCESS : begin
-          if (is_csr) begin
+          if (is_csr || is_ecall) begin
             csr_regs[csr_addr] <= csr_wdata;
+            $display("write csr pc=%h csr[%0h]=%d", pc, csr_addr, csr_wdata);
           end
           state <= WB;
         end
@@ -227,6 +231,7 @@ module core (
           end
           pc <= next_pc;
           state <= FETCH;
+          $display("----------");
         end
         // WAIT_DATA : begin
         //   state <= FETCH;
@@ -254,7 +259,7 @@ module core (
       is_load    : $display("load");
       is_store   : $display("store");
       // is_system  : $display("system pc =%h", pc);
-      is_csr     : $display("csr pc=%h", pc);
+      is_csr     : $display("csr pc=%h csrw=%h csrr=%h", pc, csr_wdata, csr_rdata);
       is_ecall   : $display("ecall pc=%h", pc);
       default    : $display("??????");
     endcase
