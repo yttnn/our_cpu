@@ -27,7 +27,7 @@ module memory (
     // $readmemh("../riscv-tests/hex/rv32ui-p-bne.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-fence_i.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-jal.hex", ROM);
-    $readmemh("../riscv-tests/hex/rv32ui-p-jalr.hex", ROM);
+    // $readmemh("../riscv-tests/hex/rv32ui-p-jalr.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-lb.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-lbu.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-lh.hex", ROM);
@@ -36,7 +36,7 @@ module memory (
     // $readmemh("../riscv-tests/hex/rv32ui-p-lw.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-ma_data.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-or.hex", ROM);
-    // $readmemh("../riscv-tests/hex/rv32ui-p-ori.hex", ROM);
+    $readmemh("../riscv-tests/hex/rv32ui-p-ori.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-sb.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-sh.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-simple.hex", ROM);
