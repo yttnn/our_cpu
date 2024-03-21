@@ -14,11 +14,11 @@ module memory (
   // localparam start = 32'h00000000;
   logic [7:0] ROM [0: 16384];
   initial begin
-    $readmemh("../riscv-tests/hex/rv32ui-p-add.hex", ROM);
+    // $readmemh("../riscv-tests/hex/rv32ui-p-add.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-addi.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-and.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-andi.hex", ROM);
-    // $readmemh("../riscv-tests/hex/rv32ui-p-auipc.hex", ROM);
+    $readmemh("../riscv-tests/hex/rv32ui-p-auipc.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-beq.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-bge.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-bgeu.hex", ROM);
