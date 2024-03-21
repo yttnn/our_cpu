@@ -18,13 +18,13 @@ module memory (
     // $readmemh("../riscv-tests/hex/rv32ui-p-addi.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-and.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-andi.hex", ROM);
-    $readmemh("../riscv-tests/hex/rv32ui-p-auipc.hex", ROM);
+    // $readmemh("../riscv-tests/hex/rv32ui-p-auipc.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-beq.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-bge.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-bgeu.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-blt.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-bltu.hex", ROM);
-    // $readmemh("../riscv-tests/hex/rv32ui-p-bne.hex", ROM);
+    $readmemh("../riscv-tests/hex/rv32ui-p-bne.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-fence_i.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-jal.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-jalr.hex", ROM);
