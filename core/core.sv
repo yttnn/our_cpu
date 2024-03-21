@@ -218,7 +218,6 @@ module core (
         MEM_ACCESS : begin
           if (is_csr || is_ecall) begin
             csr_regs[csr_addr] <= csr_wdata;
-            $display("write csr pc=%h csr[%0h]=%d", pc, csr_addr, csr_wdata);
           end
           state <= WB;
         end
@@ -231,7 +230,6 @@ module core (
           end
           pc <= next_pc;
           state <= FETCH;
-          $display("----------");
         end
         // WAIT_DATA : begin
         //   state <= FETCH;
@@ -247,7 +245,7 @@ module core (
   always @(posedge clk) begin
     if (state == DECODE) begin
     // $display("PC=%0d", pc);
-    $display("pc=%h, gp=%d, t5=%d, t6=%d, mcause=%h", pc, registers[3], registers[30], registers[31], csr_regs[12'h342]);
+    // $display("pc=%h, gp=%d, t5=%d, t6=%d, mcause=%h", pc, registers[3], registers[30], registers[31], csr_regs[12'h342]);
     case (1'b1)
       is_alu_reg : $display("alu_reg rd=%d, rs1=%d, rs2=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
       is_alu_imm : $display("alu_imm rd=%d, rs1=%d, imm=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
@@ -264,7 +262,6 @@ module core (
       default    : $display("??????");
     endcase
 
-    // $display("--------------");
     end
   end
   `endif
