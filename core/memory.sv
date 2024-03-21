@@ -50,10 +50,10 @@ module memory (
     // $readmemh("../riscv-tests/hex/rv32ui-p-srai.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-srl.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-srli.hex", ROM);
-    $readmemh("../riscv-tests/hex/rv32ui-p-sub.hex", ROM);
+    // $readmemh("../riscv-tests/hex/rv32ui-p-sub.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-sw.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-xor.hex", ROM);
-    // $readmemh("../riscv-tests/hex/rv32ui-p-xori.hex", ROM);
+    $readmemh("../riscv-tests/hex/rv32ui-p-xori.hex", ROM);
   end
 
   `include "riscv_assembly.v"
