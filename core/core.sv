@@ -224,7 +224,7 @@ module core (
         WB : begin
           if (wb_enable && rd != 0) begin
             registers[rd] <= wb_data;
-            `ifdef BENCH
+            `ifdef DEBUG
             // $display("x[%0d] <= %b", rd, wb_data);
             `endif
           end
@@ -241,7 +241,7 @@ module core (
   end
 
   // debug output
-  `ifdef BENCH
+  `ifdef DEBUG
   always @(posedge clk) begin
     if (state == DECODE) begin
     // $display("PC=%0d", pc);
