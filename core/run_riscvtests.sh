@@ -18,7 +18,14 @@ do
     continue
   fi
 
-  vvp a.out +INPUT_FILE=$testfile
-
+  exe_log=$(vvp a.out +INPUT_FILE=$testfile) # run simulation
+  if [[ `echo $exe_log | grep 'PASS'` ]]; then
+    echo "status : PASS"
+  elif [[ `echo $exe_log | grep 'FAIL'` ]]; then
+    echo "status : FAIL"
+  else
+    echo "status : unexpected"
+    echo "log : $exe_log"
+  fi
   echo "-------------"
 done
