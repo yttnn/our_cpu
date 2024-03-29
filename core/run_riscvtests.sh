@@ -11,7 +11,6 @@ iverilog -g2012 -DBENCH testbench_iverilog.sv top.sv memory_for_riscvtests.sv co
 
 for test_case in "${tests[@]}"
 do
-  echo "case : $test_case"
   testfile="../riscv-tests/hex/$test_case.hex"
   if [ ! -e $testfile ]; then
     echo "error: not found $test_case.hex from run_riscvtests.sh"
@@ -20,12 +19,12 @@ do
 
   exe_log=$(vvp a.out +INPUT_FILE=$testfile) # run simulation
   if [[ `echo $exe_log | grep 'PASS'` ]]; then
-    echo "status : PASS"
+    echo "$test_case ... PASS"
   elif [[ `echo $exe_log | grep 'FAIL'` ]]; then
-    echo "status : FAIL"
-  else
-    echo "status : unexpected"
+    echo "$test_case ... FAIL"
     echo "log : $exe_log"
+  else
+    echo "$test_case ... unexpected"
+    echo "  log : $exe_log"
   fi
-  echo "-------------"
 done
