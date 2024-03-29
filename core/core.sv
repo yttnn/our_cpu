@@ -207,7 +207,9 @@ module core (
           if (pc == 32'h4c) begin
           // if (is_system) begin
             // $display("finished a0=%d", registers[10]);
-            $display("gp = %h", registers[3]);
+            if (registers[3] == 1) begin $display("PASS"); end
+            else                   begin $display("FAIL"); end
+            $display("gp=%h", registers[3]);
             $finish();
           end
           `endif
