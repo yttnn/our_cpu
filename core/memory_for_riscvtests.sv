@@ -20,7 +20,6 @@ module memory (
       $display("INPUT_FILE argument not found");
       $finish();
     end
-    $display("%s", input_file);
     $readmemh(input_file, ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-add.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-addi.hex", ROM);
