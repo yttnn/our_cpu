@@ -10,12 +10,17 @@ module memory (
   output logic [31:0] mem_rdata
 );
 
-  logic [31:0] MEM [0:255];
+  logic [31:0] MEM [0:4095];
   // localparam start = 32'h00000000;
   logic [7:0] ROM [0: 16384];
 
   string input_file;
+  integer i;
   initial begin
+    for (i = 0; i < 4096; i++) begin
+      MEM[i] = 32'h0;
+    end
+
     if (!$value$plusargs("INPUT_FILE=%s", input_file)) begin
       $display("INPUT_FILE argument not found");
       $finish();
@@ -71,7 +76,7 @@ module memory (
       mem_rdata <= MEM[mem_addr[31:2]];
     end
     else if (mem_w_enable) begin
-      MEM[mem_addr] <= mem_wdata;
+      MEM[mem_addr[31:2]] <= mem_wdata;
     end
   end
 
