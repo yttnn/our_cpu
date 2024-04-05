@@ -111,7 +111,7 @@ module memory (
       mem_rdata <= MEM[mem_addr[31:2]];
     end
     else if (mem_w_enable) begin
-      MEM[mem_addr] <= mem_wdata;
+      MEM[mem_addr[31:2]] <= mem_wdata;
     end
   end
 

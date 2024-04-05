@@ -224,6 +224,11 @@ module core (
           if (is_csr || is_ecall) begin
             csr_regs[csr_addr] <= csr_wdata;
           end
+          `ifdef DEBUG
+          if (is_store) begin
+            $display("store mem[%h]=%h", load_store_addr, mem_wdata);
+          end
+          `endif
           state <= WB;
         end
         WB : begin
