@@ -171,12 +171,6 @@ module core (
       state <= FETCH;
     end
     else begin // reset_n == true
-      // if (wb_enable && rd != 0) begin
-      //   registers[rd] <= wb_data;
-      //   `ifdef BENCH
-      //   $display("x[%0d] <= %b", rd, wb_data);
-      //   `endif
-      // end
 
       case (state)
         FETCH : begin
@@ -200,10 +194,6 @@ module core (
           state <= EXECUTE;
         end
         EXECUTE : begin
-          // if (!is_system) begin
-            // pc <= next_pc;
-          // end
-          // state <= is_load ? LOAD : FETCH;
           state <= MEM_ACCESS;
           `ifdef BENCH
           // FIX: riscv-tests finish flag
@@ -217,9 +207,6 @@ module core (
           end
           `endif
         end
-        // LOAD : begin
-        //   state <= WAIT_DATA;
-        // end
         MEM_ACCESS : begin
           if (is_csr || is_ecall) begin
             csr_regs[csr_addr] <= csr_wdata;
@@ -236,8 +223,8 @@ module core (
             registers[rd] <= wb_data;
             `ifdef DEBUG
             if (is_load) begin
-            $display("mem[%h]=%h", load_store_addr, load_data);
-            $display("wbdata=%h", wb_data);
+              $display("mem[%h]=%h", load_store_addr, load_data);
+              $display("wbdata=%h", wb_data);
             end
             `endif
           end
@@ -246,9 +233,6 @@ module core (
           pc <= next_pc;
           state <= FETCH;
         end
-        // WAIT_DATA : begin
-        //   state <= FETCH;
-        // end
         default: $display("warning: switch state. core.sv");
       endcase
 
