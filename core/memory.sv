@@ -10,10 +10,23 @@ module memory (
   output logic [31:0] mem_rdata
 );
 
-  logic [31:0] MEM [0:255];
+  logic [31:0] MEM [0:4095];
   // localparam start = 32'h00000000;
   logic [7:0] ROM [0: 16384];
+  integer i;
   initial begin
+    for (i = 0; i<4096; i++) begin
+      MEM[i] = 32'h0;
+    end
+    // MEM[0] = {32'h22222222};
+    // ROM[0] = {8'h03};
+    // ROM[1] = {8'h23};
+    // ROM[2] = {8'h00};
+    // ROM[3] = {8'h00};
+    // ROM[4] = {8'h11};
+    // ROM[5] = {8'h12};
+    // ROM[6] = {8'h13};
+    // ROM[7] = {8'h14};
     // $readmemh("../riscv-tests/hex/rv32ui-p-add.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-addi.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-and.hex", ROM);
@@ -51,9 +64,9 @@ module memory (
     // $readmemh("../riscv-tests/hex/rv32ui-p-srl.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-srli.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-sub.hex", ROM);
-    // $readmemh("../riscv-tests/hex/rv32ui-p-sw.hex", ROM);
+    $readmemh("../riscv-tests/hex/rv32ui-p-sw.hex", ROM);
     // $readmemh("../riscv-tests/hex/rv32ui-p-xor.hex", ROM);
-    $readmemh("../riscv-tests/hex/rv32ui-p-xori.hex", ROM);
+    // $readmemh("../riscv-tests/hex/rv32ui-p-xori.hex", ROM);
   end
 
   `include "riscv_assembly.v"

@@ -134,6 +134,7 @@ module core (
                    (is_lui)            ? imm_u_sign_ext :
                    (is_auipc)          ? (pc + imm_u_sign_ext) :
                    (is_csr)            ? csr_rdata :
+                   (is_load)           ? load_data :
                    alu_out;
   assign wb_enable = (
     // state == EXECUTE &&
@@ -145,6 +146,7 @@ module core (
       is_jalr    ||
       is_lui     ||
       is_csr ||
+      is_load ||
       is_auipc
     )
   );
@@ -159,7 +161,8 @@ module core (
   // assign mem_addr = (state == WAIT_INSTR || state == FETCH) ? pc : load_store_addr;
   assign mem_addr = load_store_addr;
   assign rom_addr = pc;
-  assign mem_r_enable = (state == FETCH || (state == MEM_ACCESS && is_load));
+  // assign mem_r_enable = (state == FETCH || (state == MEM_ACCESS && is_load));
+  assign mem_r_enable = (state == MEM_ACCESS && is_load);
   assign mem_w_enable = ((state == MEM_ACCESS) && is_store);
 
   always @(posedge clk ) begin
@@ -227,9 +230,14 @@ module core (
           if (wb_enable && rd != 0) begin
             registers[rd] <= wb_data;
             `ifdef DEBUG
-            // $display("x[%0d] <= %b", rd, wb_data);
+            if (is_load) begin
+            $display("mem[%h]=%h", load_store_addr, load_data);
+            $display("wbdata=%h", wb_data);
+            end
             `endif
           end
+          // $display("mem[%h]=%h", load_store_addr, load_data);
+          // $display("wbdata=%h", wb_data);
           pc <= next_pc;
           state <= FETCH;
         end
@@ -247,14 +255,14 @@ module core (
   always @(posedge clk) begin
     if (state == DECODE) begin
     // $display("PC=%0d", pc);
-    // $display("pc=%h, gp=%d, t5=%d, t6=%d, mcause=%h", pc, registers[3], registers[30], registers[31], csr_regs[12'h342]);
+    $display("pc=%h, gp=%d, ra=%h, sp=%h, a4=%h, a5=%h, t2=%h", pc, registers[3], registers[1], registers[2], registers[14], registers[15], registers[7]);
     case (1'b1)
       is_alu_reg : $display("alu_reg rd=%d, rs1=%d, rs2=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
       is_alu_imm : $display("alu_imm rd=%d, rs1=%d, imm=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
       is_branch  : $display("branch rs1=%0d rs2=%0d", rs1_addr, rs2_addr);
       is_jal     : $display("jal");
       is_jalr    : $display("jalr");
-      is_auipc   : $display("auipc %d", imm_u_sign_ext);
+      is_auipc   : $display("auipc %h", imm_u_sign_ext);
       is_lui     : $display("lui");
       is_load    : $display("load");
       is_store   : $display("store");
