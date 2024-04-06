@@ -28,9 +28,11 @@ module core (
     end
   end
   `endif
-  logic [31:0] data;
   logic [31:0] inst;
   
+  // ================================
+  // DECODE
+  // ================================
   wire [6:0] funct7   = inst[31:25];
   wire [4:0] rs2_addr = inst[24:20];
   wire [4:0] rs1_addr = inst[19:15];
@@ -67,8 +69,6 @@ module core (
   state_t state = FETCH;
   logic [31:0] rs1_data;
   logic [31:0] rs2_data;
-  logic [31:0] wb_data;
-  logic        wb_enable;
 
   wire [31:0] load_store_addr = rs1_data + (is_store ? imm_s_sign_ext : imm_i_sign_ext);
   wire [15:0] load_halfword = load_store_addr[1] ? mem_rdata[31:16] : mem_rdata[15:0];
@@ -79,13 +79,14 @@ module core (
   wire [31:0] load_data = is_mem_byte_access ? {{24{load_sign}}, load_byte} :
                            is_mem_halfword_access ? {{16{load_sign}}, load_halfword} :
                            mem_rdata;
-  assign mem_wdata = rs2_data;
 
+  // ===========================
+  // ALU
+  // ===========================  
   wire [31:0] alu_in_1 = rs1_data;
   wire [31:0] alu_in_2 = is_alu_reg ? rs2_data : imm_i_sign_ext;
   wire [4:0] shift_amount = is_alu_reg ? rs2_data[4:0] : imm_i_sign_ext[4:0];
   logic [31:0] alu_out;
-
   always @(*) begin // TODO: change to always_comb
     case (funct3)
       3'b000 : alu_out = (funct7[5] & opcode[5]) ? (alu_in_1 - alu_in_2) : (alu_in_1 + alu_in_2);
@@ -100,6 +101,9 @@ module core (
     endcase
   end
 
+  // ===========================
+  // BRANCH
+  // ===========================
   logic [31:0] take_branch;
   always @(*) begin // TODO: change to always_comb
     case (funct3)
@@ -113,6 +117,9 @@ module core (
     endcase
   end
   
+  // ============================
+  // CSR
+  // ============================
   wire [11:0] csr_addr = is_ecall ? 12'h342 : inst[31:20];
   wire [31:0] csr_rdata = csr_regs[csr_addr];
   logic [31:0] csr_wdata;
@@ -130,14 +137,16 @@ module core (
     endcase
   end
 
-  assign wb_data = (is_jal || is_jalr) ? (pc + 4) :
-                   (is_lui)            ? imm_u_sign_ext :
-                   (is_auipc)          ? (pc + imm_u_sign_ext) :
-                   (is_csr)            ? csr_rdata :
-                   (is_load)           ? load_data :
-                   alu_out;
-  assign wb_enable = (
-    // state == EXECUTE &&
+  // ====================
+  // WRITE BACK
+  // ====================
+  wire [31:0] wb_data = (is_jal || is_jalr) ? (pc + 4) :
+                        (is_lui)            ? imm_u_sign_ext :
+                        (is_auipc)          ? (pc + imm_u_sign_ext) :
+                        (is_csr)            ? csr_rdata :
+                        (is_load)           ? load_data :
+                        alu_out;
+  wire wb_enable = (
     state == WB &&
     (
       is_alu_reg ||
@@ -157,6 +166,9 @@ module core (
                         is_ecall                   ? csr_regs[32'h305] : // jump to mtvec(trap_vector)
                         pc + 4;
 
+  // =======================
+  // MEMORY
+  // =======================
   // FIX: ROM impl
   // assign mem_addr = (state == WAIT_INSTR || state == FETCH) ? pc : load_store_addr;
   assign mem_addr = load_store_addr;
@@ -164,6 +176,7 @@ module core (
   // assign mem_r_enable = (state == FETCH || (state == MEM_ACCESS && is_load));
   assign mem_r_enable = (state == MEM_ACCESS && is_load);
   assign mem_w_enable = ((state == MEM_ACCESS) && is_store);
+  assign mem_wdata = rs2_data;
 
   always @(posedge clk ) begin
     if (!reset_n) begin
