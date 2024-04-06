@@ -93,7 +93,7 @@ module core (
       3'b010 : alu_out = ($signed(alu_in_1) < $signed(alu_in_2));
       3'b011 : alu_out = (alu_in_1 < alu_in_2);
       3'b100 : alu_out = (alu_in_1 ^ alu_in_2);
-      3'b101 : alu_out = funct7[5] ? ($signed(alu_in_1) >>> shift_amount) : (alu_in_1 >> shift_amount);
+      3'b101 : alu_out = funct7[5] ? ($signed(alu_in_1) >>> shift_amount) : ($signed(alu_in_1) >> shift_amount);
       3'b110 : alu_out = (alu_in_1 | alu_in_2);
       3'b111 : alu_out = (alu_in_1 & alu_in_2);
       default: ;
