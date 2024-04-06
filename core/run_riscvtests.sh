@@ -15,7 +15,11 @@ tests=(
   "rv32ui-p-xor" "rv32ui-p-xori"
 )
 
+# compile
 iverilog -g2012 -DBENCH testbench_iverilog.sv top.sv memory_for_riscvtests.sv core.sv def.sv
+
+num_tests=${#tests[@]}
+num_passed=0
 
 for test_case in "${tests[@]}"
 do
@@ -28,6 +32,7 @@ do
   exe_log=$(vvp a.out +INPUT_FILE=$testfile) # run simulation
   if [[ `echo $exe_log | grep 'PASS'` ]]; then
     echo "$test_case ... PASS"
+    num_passed=$((num_passed+1))
   elif [[ `echo $exe_log | grep 'FAIL'` ]]; then
     echo "$test_case ... FAIL"
     echo "log : $exe_log"
@@ -36,3 +41,6 @@ do
     echo "  log : $exe_log"
   fi
 done
+
+echo "riscvtests finished"
+echo "$num_passed/$num_tests passed"
