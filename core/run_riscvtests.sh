@@ -16,7 +16,7 @@ tests=(
 )
 
 # compile
-iverilog -g2012 -DBENCH testbench_iverilog.sv top.sv memory_for_riscvtests.sv core.sv def.sv
+iverilog -g2012 -DBENCH testbench_iverilog.sv top.sv clock_divider.sv memory_for_riscvtests.sv core.sv def.sv
 
 num_tests=${#tests[@]}
 num_passed=0

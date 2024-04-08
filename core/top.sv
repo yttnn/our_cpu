@@ -15,8 +15,14 @@ module top(
   logic mem_r_enable;
   logic [31:0] x1;
 
+  logic cclk;
+  clock_divider _clock_divider(
+    .CLK(clk),
+    .divided_clk(cclk)
+  );
+
   memory _memory(
-    .clk(clk),
+    .clk(cclk),
     .mem_addr(mem_addr),
     .mem_rdata(mem_rdata),
     .rom_addr(rom_addr),
@@ -27,7 +33,7 @@ module top(
   );
 
   core _core(
-    .clk(clk),
+    .clk(cclk),
     .reset_n(reset_n),
     .mem_addr(mem_addr),
     .rom_addr(rom_addr),
