@@ -11,7 +11,9 @@ module core (
   output logic mem_r_enable,
   output logic mem_w_enable,
   output logic [31:0] mem_wdata,
-  output logic [31:0] x1 // for debug
+  // for debug
+  output logic [31:0] debug_signal,
+  output logic [31:0] debug_status // [0]=1 finished
 );
   
   logic [31:0] pc = 0;
@@ -190,7 +192,8 @@ module core (
           `ifdef BENCH
           if (pc === 'x) begin
             $display("error: unexpected value in pc");
-            $finish();
+            debug_status[0] = 1;
+            // $finish();
           end
           `endif
           state <= WAIT_INSTR;
@@ -213,8 +216,8 @@ module core (
           if (pc == 32'h4c) begin
             if (registers[3] == 1) begin $display("PASS"); end
             else                   begin $display("FAIL"); end
-            $display("gp=%h", registers[3]);
-            $finish();
+            debug_signal <= registers[3];
+            debug_status <= 1;
           end
           `endif
         end

@@ -1,6 +1,9 @@
 module top(
   input logic clk,
-  input logic reset_n
+  input logic reset_n,
+
+  output logic [31:0] debug_signal,
+  output logic [31:0] debug_status
   // input logic rxd,
   
   // output logic txd,
@@ -13,7 +16,6 @@ module top(
   logic [31:0] mem_wdata;
   logic mem_w_enable;
   logic mem_r_enable;
-  logic [31:0] x1;
 
 
   memory _memory(
@@ -37,7 +39,8 @@ module top(
     .mem_r_enable(mem_r_enable),
     .mem_w_enable(mem_w_enable),
     .mem_wdata(mem_wdata),
-    .x1(x1)
+    .debug_signal(debug_signal),
+    .debug_status(debug_status)
   );
   
 endmodule
