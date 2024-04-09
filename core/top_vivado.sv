@@ -11,8 +11,13 @@ module top_vivado(
     .divided_clk(divided_clk)
   );
 
+  logic [31:0] debug_signal;
+  logic [31:0] debug_status;
+
   top _top(
     .clk(divided_clk),
-    .reset_n(!RESET)
+    .reset_n(!RESET),
+    .debug_signal(debug_signal),
+    .debug_status(debug_status)
   );
 endmodule
