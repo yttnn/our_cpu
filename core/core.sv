@@ -254,7 +254,6 @@ module core (
   `ifdef DEBUG
   always @(posedge clk) begin
     if (state == DECODE) begin
-    // $display("PC=%0d", pc);
     $display("pc=%h, gp=%d, ra=%h, sp=%h, a4=%h, a5=%h, t2=%h", pc, registers[3], registers[1], registers[2], registers[14], registers[15], registers[7]);
     case (1'b1)
       is_alu_reg : $display("alu_reg rd=%d, rs1=%d, rs2=%d, funct3=%b", rd, rs1_addr, rs2_addr, funct3);
@@ -266,7 +265,6 @@ module core (
       is_lui     : $display("lui");
       is_load    : $display("load");
       is_store   : $display("store");
-      // is_system  : $display("system pc =%h", pc);
       is_csr     : $display("csr pc=%h csrw=%h csrr=%h", pc, csr_wdata, csr_rdata);
       is_ecall   : $display("ecall pc=%h", pc);
       default    : $display("??????");
